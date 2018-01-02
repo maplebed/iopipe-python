@@ -9,6 +9,7 @@ from . import constants
 from .monotonic import monotonic
 from .plugins import get_plugin_meta
 from .send_report import send_report
+from .send_honeycomb import send_honeycomb
 
 if sys.platform.startswith('linux'):
     from . import system
@@ -147,3 +148,4 @@ class Report(object):
         logger.debug(json.dumps(self.report, indent=2, sort_keys=True))
 
         send_report(self.report, self.config)
+        send_honeycomb(self.report, self.config)

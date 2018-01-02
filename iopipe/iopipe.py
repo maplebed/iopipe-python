@@ -3,6 +3,7 @@ import inspect
 import logging
 import signal
 import warnings
+import libhoney
 
 from .config import set_config
 from .context import ContextWrapper
@@ -13,7 +14,6 @@ logging.basicConfig()
 
 logger = logging.getLogger('iopipe')
 logger.setLevel(logging.INFO)
-
 
 class IOpipe(object):
     def __init__(self, token=None, url=None, debug=None, plugins=None, **options):
@@ -68,6 +68,13 @@ class IOpipe(object):
             context = ContextWrapper(context, self)
 
             self.run_hooks('pre:invoke', event=event, context=context)
+
+            # writekey and dataset
+            libhoney.init(
+                writekey=self.config['honeycombwk'],
+                dataset=self.config['honeycombds'],
+                )
+            logger.info("initializing libhoney with {} and {}".format(self.config['honeycombwk'], self.config['honeycombds']))
 
             # if env var IOPIPE_ENABLED is set to False skip reporting
             if self.config['enabled'] is False:
@@ -127,6 +134,8 @@ class IOpipe(object):
             finally:
                 signal.setitimer(signal.ITIMER_REAL, 0)
                 self.run_hooks('post:report')
+                libhoney.close()
+                # read_responses(libhoney.responses())
 
             return result
 
@@ -174,3 +183,16 @@ class IOpipe(object):
 
         if name in hooks:
             [hooks[name](p) for p in self.plugins if p.enabled]
+
+def read_responses(resp_queue):
+    '''read responses from the libhoney queue, print them out.'''
+    while True:
+        resp = resp_queue.get()
+        # libhoney will enqueue a None value after we call libhoney.close()
+        if resp is None:
+            break
+        status = "sending event with metadata {} took {}ms and got response code {} with message \"{}\"".format(
+            resp["metadata"], resp["duration"], resp["status_code"],
+            resp["body"].rstrip())
+        logger.info(status)
+

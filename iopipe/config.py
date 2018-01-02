@@ -17,6 +17,8 @@ def set_config(**config):
     config.setdefault('plugins', [])
     config.setdefault('timeout_window', os.getenv('IOPIPE_TIMEOUT_WINDOW', 0.5))
     config.setdefault('token', os.getenv('IOPIPE_TOKEN') or os.getenv('IOPIPE_CLIENTID') or '')
+    config.setdefault('honeycombwk', os.getenv('IOPIPE_HONEYCOMBWK', 'unsetwk'))
+    config.setdefault('honeycombds', os.getenv('IOPIPE_HONEYCOMBDS', 'unsetds'))
 
     if 'client_id' in config:
         config['token'] = config.pop('client_id')
