@@ -141,4 +141,3 @@ class Report(object):
         }
 
         self.report['duration'] = int((monotonic() - self.start_time) * 1e9)
-
