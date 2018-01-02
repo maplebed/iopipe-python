@@ -8,7 +8,6 @@ import traceback
 from . import constants
 from .monotonic import monotonic
 from .plugins import get_plugin_meta
-from .send_report import send_report
 
 if sys.platform.startswith('linux'):
     from . import system
@@ -103,7 +102,7 @@ class Report(object):
         }
         self.report['errors'] = details
 
-    def send(self, error=None):
+    def prepare(self, error=None):
         """
         Send the current report to IOpipe.
 
@@ -143,7 +142,3 @@ class Report(object):
 
         self.report['duration'] = int((monotonic() - self.start_time) * 1e9)
 
-        logger.debug('Sending report to IOpipe:')
-        logger.debug(json.dumps(self.report, indent=2, sort_keys=True))
-
-        send_report(self.report, self.config)

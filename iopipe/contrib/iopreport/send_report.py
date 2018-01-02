@@ -16,10 +16,11 @@ def send_report(report, config):
     :param report: The report to be sent.
     :param config: The IOpipe agent configuration.
     """
+
     url = 'https://{host}{path}'.format(**config)
 
     try:
-        response = session.post(url, json=report, timeout=config['network_timeout'])
+        response = session.post(url, json=report.report, timeout=config['network_timeout'])
         response.raise_for_status()
         logger.debug('Report sent to IOpipe successfully')
     except Exception as e:

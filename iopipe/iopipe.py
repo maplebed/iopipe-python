@@ -8,6 +8,7 @@ from .config import set_config
 from .context import ContextWrapper
 from .plugins import is_plugin
 from .report import Report
+from .contrib.iopreport import IopipeReport
 
 logging.basicConfig()
 
@@ -18,9 +19,13 @@ logger.setLevel(logging.INFO)
 class IOpipe(object):
     def __init__(self, token=None, url=None, debug=None, plugins=None, **options):
         self.plugins = []
-        if plugins is not None:
+        if plugins is None:
+            # default, load the iopipe reporting plugin
+            self.plugins = self.load_plugins([IopipeReport])
+        else:
+            # but if you list plugins, just use those
             self.plugins = self.load_plugins(plugins)
-            options['plugins'] = self.plugins
+        options['plugins'] = self.plugins
 
         self.run_hooks('pre:setup')
 
@@ -33,6 +38,7 @@ class IOpipe(object):
 
         self.config = set_config(**options)
         self.config['plugins'] = self.load_plugins(self.config['plugins'])
+        logger.info("list of plugins: {}".format(self.config['plugins']))
         self.report = None
 
         if self.config['debug']:
@@ -117,13 +123,15 @@ class IOpipe(object):
                 result = func(event, context)
             except Exception as e:
                 self.run_hooks('post:invoke', event=event, context=context)
+                self.report.prepare(e)
                 self.run_hooks('pre:report')
-                self.report.send(e)
+                self.run_hooks('send:report')
                 raise e
             else:
                 self.run_hooks('post:invoke', event=event, context=context)
+                self.report.prepare()
                 self.run_hooks('pre:report')
-                self.report.send()
+                self.run_hooks('send:report')
             finally:
                 signal.setitimer(signal.ITIMER_REAL, 0)
                 self.run_hooks('post:report')
@@ -169,6 +177,7 @@ class IOpipe(object):
             'pre:invoke': lambda p: p.pre_invoke(event, context),
             'post:invoke': lambda p: p.post_invoke(event, context),
             'pre:report': lambda p: p.pre_report(self.report),
+            'send:report': lambda p: p.send_report(self.report),
             'post:report': lambda p: p.post_report(),
         }
 

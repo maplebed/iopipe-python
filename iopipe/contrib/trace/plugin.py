@@ -44,5 +44,8 @@ class TracePlugin(Plugin):
             add_timeline_measures(self.timeline)
         report.report['performanceEntries'] = [e._asdict() for e in self.timeline.get_entries()]
 
+    def send_report(self, report):
+        pass
+
     def post_report(self):
         self.timeline = Timeline()
